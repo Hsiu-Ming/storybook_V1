@@ -123,6 +123,6 @@ if st.button("✨ 生成繪本製作指令", use_container_width=True, type="pri
                 """, unsafe_allow_html=True)
                 
                 st.code(response.text, language="text")
-                st.link_button("🚀 前往 Google 官網開始製作", "https://gemini.google.com/")
+                st.link_button("🚀 前往 Google 官網開始製作", "https://gemini.google.com/gem/storybook")
             except Exception as e:
                 st.error(f"生成失敗！真實原因：{e}")
