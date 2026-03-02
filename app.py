@@ -295,3 +295,4 @@ status.update(label=“✅ 編排完成！”, state=“complete”, expanded=Fa
 
         except Exception as e:
             st.error(f"⚠️ 生成失敗，請確認模型名稱與 API Key 是否正確。\n\n錯誤詳情：{e}")
+```
