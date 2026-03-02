@@ -18,17 +18,142 @@ if "page_count" not in st.session_state:
 if "app_step" not in st.session_state:
     st.session_state.app_step = 1
 
-# --- 3. UI 美化 CSS (加入遊戲化動畫與進度條) ---
+# --- 3. UI 美化 CSS (加入防缺字全域設定與遊戲化動畫) ---
 sidebar_display = "none" if api_key else "block"
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
 
-* {
+/* 強制全域使用思源黑體，解決「回」等繁體字缺字變成黑塊的問題 */
+* {{
     font-family: 'Noto Sans TC', 'Taipei Sans TC Beta', sans-serif !important;
-}
+}}
 
-/* 剩下的其他 CSS 樣式維持不變... */
+html, body, [class*="css"] {{
+    font-size: 18px;
+    letter-spacing: 0.5px;
+}}
+
+.stApp {{
+    background:
+        radial-gradient(ellipse at 20% 10%, rgba(255, 218, 150, 0.25) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 90%, rgba(255, 182, 120, 0.2) 0%, transparent 50%),
+        linear-gradient(160deg, #FFF9F0 0%, #FFF3E0 50%, #FFF8F0 100%);
+    min-height: 100vh;
+}}
+
+.main-title {{
+    font-weight: 700;
+    background: linear-gradient(135deg, #C0392B 0%, #E67E22 40%, #F39C12 70%, #D35400 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 48px !important;
+    text-align: center;
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+}}
+
+/* 自訂粗體進度條 */
+.custom-progress-bg {{
+    background-color: #E5E7E9;
+    border-radius: 20px;
+    height: 28px;
+    width: 100%;
+    margin: 20px 0 30px 0;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+    overflow: hidden;
+}}
+.custom-progress-bar {{
+    background: linear-gradient(90deg, #F1C40F, #F39C12, #D35400);
+    height: 100%;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    transition: width 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+}}
+
+/* 🎈 解鎖時的彈跳動畫 */
+@keyframes popIn {{
+    0% {{ transform: scale(0.85); opacity: 0; }}
+    60% {{ transform: scale(1.03); opacity: 1; }}
+    100% {{ transform: scale(1); opacity: 1; }}
+}}
+
+/* 🔓 已解鎖的彩色卡片 */
+.unlocked-card {{
+    background: rgba(255, 255, 255, 0.95);
+    padding: 24px 30px;
+    border-radius: 20px;
+    border: 3px solid #F39C12;
+    box-shadow: 0 10px 30px rgba(230, 126, 34, 0.2);
+    margin-bottom: 24px;
+    animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}}
+
+/* 🔒 未解鎖的灰階卡片 */
+.locked-card {{
+    background: rgba(240, 240, 240, 0.6);
+    padding: 20px 30px;
+    border-radius: 20px;
+    border: 3px dashed #BDC3C7;
+    margin-bottom: 24px;
+    color: #7F8C8D;
+    filter: grayscale(100%);
+    opacity: 0.6;
+    transition: all 0.5s ease;
+}}
+.locked-card h3 {{
+    color: #7F8C8D !important;
+}}
+
+.unlocked-card h3 {{
+    color: #D35400;
+    font-weight: 700;
+    font-size: 26px;
+    margin: 0 0 12px 0;
+}}
+
+.unlocked-card p {{
+    color: #5C4033;
+    font-size: 18px;
+    line-height: 1.8;
+}}
+
+/* 闖關按鈕特效 */
+.next-step-btn > button {{
+    background: white !important;
+    color: #D35400 !important;
+    border: 3px solid #D35400 !important;
+    border-radius: 16px !important;
+    font-weight: 700 !important;
+    font-size: 20px !important;
+    padding: 12px 24px !important;
+    box-shadow: 0 4px 10px rgba(211, 84, 0, 0.15) !important;
+    transition: all 0.2s ease !important;
+}}
+.next-step-btn > button:hover {{
+    background: #FFF3E0 !important;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(211, 84, 0, 0.25) !important;
+}}
+
+.stButton > button[kind="primary"] {{
+    background: linear-gradient(135deg, #27AE60, #2ECC71) !important;
+    border: none !important;
+    border-radius: 16px !important;
+    font-weight: 700 !important;
+    font-size: 22px !important;
+    padding: 18px !important;
+    color: white !important;
+    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4) !important;
+}}
+
+[data-testid="stSidebar"] {{ display: {sidebar_display}; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -99,7 +224,7 @@ with col_btn1:
                     response = model.generate_content(polish_prompt)
                     st.session_state.transcript = response.text
                     st.toast("✨ 文字變得更優美了！", icon="🪄")
-                    time.sleep(1) # 給一點時間看提示
+                    time.sleep(1)
                     st.rerun()
                 except:
                     st.error("⚠️ 潤飾失敗")
@@ -112,7 +237,7 @@ with col_btn2:
         if st.session_state.transcript.strip():
             if st.session_state.app_step < 2:
                 st.toast("🎉 恭喜通過第一關！解鎖畫風選擇！", icon="🔓")
-                time.sleep(1.2) # 延遲一下讓長輩看到過關提示
+                time.sleep(1.2)
             st.session_state.app_step = max(st.session_state.app_step, 2)
             st.rerun()
         else:
@@ -125,7 +250,6 @@ st.write("---")
 # 🚩 第二關：挑選畫風與頁數
 # ==========================================
 if st.session_state.app_step < 2:
-    # 🔒 未解鎖視角
     st.markdown("""
     <div class="locked-card">
         <h3>🔒 第二關：尚未解鎖</h3>
@@ -133,7 +257,6 @@ if st.session_state.app_step < 2:
     </div>
     """, unsafe_allow_html=True)
 else:
-    # 🔓 已解鎖視角 (帶有彈出動畫)
     st.markdown("""
     <div class="unlocked-card">
         <h3>🎯 第二關：為故事穿上美麗的外衣</h3>
@@ -186,9 +309,8 @@ else:
 # 🚩 第三關：生成指令
 # ==========================================
 if st.session_state.app_step < 3:
-    # 🔒 未解鎖視角
     if st.session_state.app_step == 1:
-        pass # 為了畫面簡潔，第一關時先隱藏第三關的鎖頭
+        pass
     else:
         st.markdown("""
         <div class="locked-card">
@@ -197,7 +319,6 @@ if st.session_state.app_step < 3:
         </div>
         """, unsafe_allow_html=True)
 else:
-    # 🔓 已解鎖視角
     st.markdown("""
     <div class="unlocked-card" style="border-color: #27AE60;">
         <h3 style="color: #27AE60;">👑 最終關：見證魔法時刻</h3>
@@ -223,7 +344,6 @@ else:
                 response = model.generate_content(st.session_state.transcript)
                 status.update(label="✅ 繪本指令編排完成！", state="complete", expanded=False)
                 
-                # 過關終極回饋：噴射氣球！
                 st.balloons() 
 
                 st.success("📋 請點擊下方區塊右上角的圖示複製文字，然後前往 Google AI Studio 貼上即可開始製作！")
