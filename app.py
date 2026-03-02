@@ -1,6 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 from streamlit_mic_recorder import mic_recorder
+import time
 
 # --- 1. 網頁基礎設定 ---
 st.set_page_config(page_title="暖心繪本大師", page_icon="🎨", layout="centered")
@@ -8,27 +9,23 @@ st.set_page_config(page_title="暖心繪本大師", page_icon="🎨", layout="ce
 # --- 2. 安全讀取秘密金鑰與狀態初始化 ---
 api_key = st.secrets.get("GEMINI_API_KEY")
 
-# 初始化所有的 Session State
 if "transcript" not in st.session_state:
     st.session_state.transcript = ""
 if "last_audio_bytes" not in st.session_state:
     st.session_state.last_audio_bytes = None
 if "page_count" not in st.session_state:
     st.session_state.page_count = 10
-# 新增：紀錄目前進行到第幾關 (預設第 1 關)
 if "app_step" not in st.session_state:
     st.session_state.app_step = 1
 
-# --- 3. UI 美化 CSS (台北黑體 & 闖關風格) ---
+# --- 3. UI 美化 CSS (加入遊戲化動畫與進度條) ---
 sidebar_display = "none" if api_key else "block"
 st.markdown(f"""
 <style>
-/* 引入思源黑體作為台北黑體的安全備案 */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
 
 html, body, [class*="css"] {{
-    /* 優先使用台北黑體，若無則使用思源黑體 */
-    font-family: 'Taipei Sans TC Beta', 'Taipei Sans TC', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    font-family: 'Taipei Sans TC Beta', 'Taipei Sans TC', 'Noto Sans TC', sans-serif;
     font-size: 18px;
     letter-spacing: 0.5px;
 }}
@@ -50,121 +47,148 @@ html, body, [class*="css"] {{
     font-size: 48px !important;
     text-align: center;
     letter-spacing: 4px;
-    line-height: 1.3;
     margin-bottom: 8px;
-    filter: drop-shadow(0 2px 4px rgba(230, 126, 34, 0.2));
 }}
 
-.subtitle {{
-    text-align: center;
-    color: #8C6239;
-    font-size: 18px;
-    font-weight: 400;
-    letter-spacing: 2px;
-    margin-bottom: 30px;
-}}
-
-/* 關卡卡片設計：增加對比度與圓角，保護長輩眼睛 */
-.step-card {{
-    background: rgba(255, 255, 255, 0.9);
-    padding: 24px 30px;
+/* 自訂粗體進度條 */
+.custom-progress-bg {{
+    background-color: #E5E7E9;
     border-radius: 20px;
-    border: 2px solid #F39C12;
-    box-shadow: 0 8px 24px rgba(230, 126, 34, 0.15);
-    margin-bottom: 24px;
+    height: 28px;
+    width: 100%;
+    margin: 20px 0 30px 0;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+    overflow: hidden;
 }}
-
-.step-card h3 {{
-    color: #D35400;
-    font-weight: 700;
-    font-size: 24px;
-    margin: 0 0 12px 0;
+.custom-progress-bar {{
+    background: linear-gradient(90deg, #F1C40F, #F39C12, #D35400);
+    height: 100%;
+    border-radius: 20px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    transition: width 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
 }}
 
-.step-card p {{
+/* 🎈 解鎖時的彈跳動畫 */
+@keyframes popIn {{
+    0% {{ transform: scale(0.85); opacity: 0; }}
+    60% {{ transform: scale(1.03); opacity: 1; }}
+    100% {{ transform: scale(1); opacity: 1; }}
+}}
+
+/* 🔓 已解鎖的彩色卡片 */
+.unlocked-card {{
+    background: rgba(255, 255, 255, 0.95);
+    padding: 24px 30px;
+    border-radius: 20px;
+    border: 3px solid #F39C12;
+    box-shadow: 0 10px 30px rgba(230, 126, 34, 0.2);
+    margin-bottom: 24px;
+    animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}}
+
+/* 🔒 未解鎖的灰階卡片 */
+.locked-card {{
+    background: rgba(240, 240, 240, 0.6);
+    padding: 20px 30px;
+    border-radius: 20px;
+    border: 3px dashed #BDC3C7;
+    margin-bottom: 24px;
+    color: #7F8C8D;
+    filter: grayscale(100%);
+    opacity: 0.6;
+    transition: all 0.5s ease;
+}}
+.locked-card h3 {{
+    color: #7F8C8D !important;
+}}
+
+.unlocked-card h3 {{
+    color: #D35400;
+    font-weight: 700;
+    font-size: 26px;
+    margin: 0 0 12px 0;
+}}
+
+.unlocked-card p {{
     color: #5C4033;
-    font-weight: 400;
-    font-size: 17px;
+    font-size: 18px;
     line-height: 1.8;
-    margin: 0;
 }}
 
-/* 下一步按鈕的特殊設計 */
+/* 闖關按鈕特效 */
 .next-step-btn > button {{
     background: white !important;
     color: #D35400 !important;
-    border: 2px solid #D35400 !important;
-    border-radius: 12px !important;
-    font-weight: 700 !important;
-    font-size: 18px !important;
-    padding: 10px 24px !important;
-    transition: all 0.3s ease !important;
-}}
-.next-step-btn > button:hover {{
-    background: #FFF3E0 !important;
-    transform: translateY(-2px);
-}}
-
-.stButton > button[kind="primary"] {{
-    background: linear-gradient(135deg, #E67E22, #D35400) !important;
-    border: none !important;
+    border: 3px solid #D35400 !important;
     border-radius: 16px !important;
     font-weight: 700 !important;
     font-size: 20px !important;
-    letter-spacing: 2px !important;
-    padding: 16px !important;
-    color: white !important;
-    box-shadow: 0 6px 20px rgba(230, 126, 34, 0.4) !important;
+    padding: 12px 24px !important;
+    box-shadow: 0 4px 10px rgba(211, 84, 0, 0.15) !important;
+    transition: all 0.2s ease !important;
+}}
+.next-step-btn > button:hover {{
+    background: #FFF3E0 !important;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(211, 84, 0, 0.25) !important;
 }}
 
-.stTextArea textarea {{
-    border: 2px solid #F5CBA7 !important;
-    border-radius: 12px !important;
-    font-size: 18px !important;
-    line-height: 1.6 !important;
-    color: #3E2723;
+.stButton > button[kind="primary"] {{
+    background: linear-gradient(135deg, #27AE60, #2ECC71) !important;
+    border: none !important;
+    border-radius: 16px !important;
+    font-weight: 700 !important;
+    font-size: 22px !important;
+    padding: 18px !important;
+    color: white !important;
+    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4) !important;
 }}
 
 [data-testid="stSidebar"] {{ display: {sidebar_display}; }}
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. 主畫面 UI 與 API 驗證 ---
+# --- 4. 主畫面 UI ---
 st.markdown('<h1 class="main-title">暖心繪本大師</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">✦ 用您的聲音，留下最珍貴的回憶 ✦</p>', unsafe_allow_html=True)
 
 if not api_key:
     st.error("🔑 偵測不到內置金鑰。")
     with st.sidebar:
         api_key = st.text_input("手動輸入 API Key：", type="password")
-
 if api_key:
     genai.configure(api_key=api_key)
 
-# ==========================================
-# 🚩 關卡一：分享故事
-# ==========================================
-st.markdown("""
-<div class="step-card">
-    <h3>🎯 第一關：說出您的故事</h3>
-    <p>請按下方的<b>紅點按鈕</b>開始錄音，就像在跟孫子聊天一樣輕鬆。說完後再按一次結束，AI 會幫您把語氣變得更優美喔！您也可以直接在框框內打字。</p>
+# 🏆 動態闖關進度條
+progress_percentage = int((st.session_state.app_step / 3) * 100)
+st.markdown(f"""
+<div class="custom-progress-bg">
+    <div class="custom-progress-bar" style="width: {progress_percentage}%;">
+        ⭐ 當前進度：第 {st.session_state.app_step} / 3 關
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
-audio_record = mic_recorder(
-    start_prompt="🔴 點這裡開始錄音",
-    stop_prompt="⏹️ 點這裡結束錄音",
-    key="recorder"
-)
+# ==========================================
+# 🚩 第一關：分享故事 (永遠解鎖)
+# ==========================================
+st.markdown("""
+<div class="unlocked-card">
+    <h3>🎯 第一關：說出您的故事</h3>
+    <p>按下方的<b>紅點</b>開始錄音，就像在跟孫子聊天一樣。說完後再按一次結束，AI 會幫您把語氣變得更優美！</p>
+</div>
+""", unsafe_allow_html=True)
 
-# 處理錄音與潤飾
+audio_record = mic_recorder(start_prompt="🔴 點這裡開始錄音", stop_prompt="⏹️ 點這裡結束錄音", key="recorder")
+
 if audio_record and api_key:
     current_audio_bytes = audio_record["bytes"]
     if current_audio_bytes != st.session_state.last_audio_bytes:
-        with st.spinner("🧠 正在專心聽您說故事，並轉成優美的文字..."):
+        with st.spinner("🧠 正在專心聽您說故事..."):
             try:
                 model = genai.GenerativeModel("gemini-2.0-flash")
                 mime_type = audio_record.get("mime_type", "audio/webm")
@@ -174,18 +198,16 @@ if audio_record and api_key:
                 
                 st.session_state.transcript = response.text
                 st.session_state.last_audio_bytes = current_audio_bytes
-                st.toast("故事記錄成功！", icon="✅")
+                st.toast("🎉 故事記錄成功！", icon="✅")
             except Exception as e:
-                st.error("⚠️ 錄音處理失敗，請稍後再試。")
+                st.error("⚠️ 錄音處理失敗。")
 
-# 文字草稿區塊
-current_text = st.text_area(
+st.session_state.transcript = st.text_area(
     "📝 您的故事內容（可以在這裡修改）：",
-    height=180,
+    height=150,
     value=st.session_state.transcript,
     placeholder="錄音完成後，文字會出現在這裡..."
 )
-st.session_state.transcript = current_text
 
 col_btn1, col_btn2 = st.columns([1, 1])
 with col_btn1:
@@ -197,6 +219,8 @@ with col_btn1:
                     polish_prompt = f"請將以下文字重新潤飾。修正錯字、語句不順，轉化為溫暖、充滿畫面感的繪本文字：\n\n{st.session_state.transcript}"
                     response = model.generate_content(polish_prompt)
                     st.session_state.transcript = response.text
+                    st.toast("✨ 文字變得更優美了！", icon="🪄")
+                    time.sleep(1) # 給一點時間看提示
                     st.rerun()
                 except:
                     st.error("⚠️ 潤飾失敗")
@@ -204,10 +228,12 @@ with col_btn1:
             st.warning("請先輸入故事喔！")
 
 with col_btn2:
-    # 推進到第二關的按鈕
     st.markdown('<div class="next-step-btn">', unsafe_allow_html=True)
-    if st.button("✅ 故事準備好了，進入下一步 ➔", use_container_width=True):
+    if st.button("✅ 故事完成了，進入第二關 ➔", use_container_width=True):
         if st.session_state.transcript.strip():
+            if st.session_state.app_step < 2:
+                st.toast("🎉 恭喜通過第一關！解鎖畫風選擇！", icon="🔓")
+                time.sleep(1.2) # 延遲一下讓長輩看到過關提示
             st.session_state.app_step = max(st.session_state.app_step, 2)
             st.rerun()
         else:
@@ -217,13 +243,22 @@ with col_btn2:
 st.write("---")
 
 # ==========================================
-# 🚩 關卡二：挑選畫風與頁數 (需解鎖)
+# 🚩 第二關：挑選畫風與頁數
 # ==========================================
-if st.session_state.app_step >= 2:
+if st.session_state.app_step < 2:
+    # 🔒 未解鎖視角
     st.markdown("""
-    <div class="step-card">
-        <h3>🎯 第二關：選擇繪本的模樣</h3>
-        <p>故事有了，現在為它挑選一件美麗的外衣吧！您喜歡哪一種繪畫風格呢？</p>
+    <div class="locked-card">
+        <h3>🔒 第二關：尚未解鎖</h3>
+        <p>請先在上方完成故事分享，就能解鎖這個關卡囉！</p>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    # 🔓 已解鎖視角 (帶有彈出動畫)
+    st.markdown("""
+    <div class="unlocked-card">
+        <h3>🎯 第二關：為故事穿上美麗的外衣</h3>
+        <p>故事有了，現在來挑選您最喜歡的繪畫風格吧！</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -256,31 +291,44 @@ if st.session_state.app_step >= 2:
                 except:
                     st.toast("無法分析，請手動調整", icon="⚠️")
     
-    # 推進到第三關的按鈕
     st.markdown('<div class="next-step-btn">', unsafe_allow_html=True)
-    if st.button("✅ 設定好了，準備製作繪本 ➔", use_container_width=True):
+    if st.button("✅ 設定好了，進入最終關卡 ➔", use_container_width=True):
+        if st.session_state.app_step < 3:
+            st.toast("🎉 恭喜通過第二關！即將施展魔法！", icon="🔓")
+            time.sleep(1.2)
         st.session_state.app_step = 3
-        st.session_state.selected_style = selected_style # 記住選擇的畫風
+        st.session_state.selected_style = selected_style
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-    
+
     st.write("---")
 
 # ==========================================
-# 🚩 關卡三：生成指令 (需解鎖)
+# 🚩 第三關：生成指令
 # ==========================================
-if st.session_state.app_step >= 3:
+if st.session_state.app_step < 3:
+    # 🔒 未解鎖視角
+    if st.session_state.app_step == 1:
+        pass # 為了畫面簡潔，第一關時先隱藏第三關的鎖頭
+    else:
+        st.markdown("""
+        <div class="locked-card">
+            <h3>🔒 最終關：尚未解鎖</h3>
+            <p>完成第二關的設定後，魔法按鈕就會出現！</p>
+        </div>
+        """, unsafe_allow_html=True)
+else:
+    # 🔓 已解鎖視角
     st.markdown("""
-    <div class="step-card" style="border-color: #27AE60;">
-        <h3 style="color: #27AE60;">🎯 最後一步：見證魔法時刻</h3>
-        <p>太棒了！一切準備就緒。請點擊下方的大按鈕，AI 就會幫您把故事變成完整的繪本分鏡腳本。</p>
+    <div class="unlocked-card" style="border-color: #27AE60;">
+        <h3 style="color: #27AE60;">👑 最終關：見證魔法時刻</h3>
+        <p>太棒了！您已經完成所有設定。請點擊下方綠色大按鈕，見證您的故事變成繪本腳本！</p>
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("🌟 施展魔法！生成繪本製作指令", use_container_width=True, type="primary"):
+    if st.button("🌟 施展魔法！生成繪本指令", use_container_width=True, type="primary"):
         with st.status("🧠 AI 正在為您編排精美的分鏡...", expanded=True) as status:
             try:
-                # 取得剛剛記住的畫風
                 style_en = style_options[st.session_state.get("selected_style", list(style_options.keys())[0])]
                 
                 model = genai.GenerativeModel(
@@ -295,7 +343,9 @@ if st.session_state.app_step >= 3:
                 )
                 response = model.generate_content(st.session_state.transcript)
                 status.update(label="✅ 繪本指令編排完成！", state="complete", expanded=False)
-                st.balloons() # 達成任務的彩蛋慶祝效果！
+                
+                # 過關終極回饋：噴射氣球！
+                st.balloons() 
 
                 st.success("📋 請點擊下方區塊右上角的圖示複製文字，然後前往 Google AI Studio 貼上即可開始製作！")
                 st.code(response.text, language="text")
