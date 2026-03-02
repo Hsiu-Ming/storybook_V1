@@ -4,7 +4,7 @@ from streamlit_mic_recorder import mic_recorder
 
 # — 1. 網頁基礎設定 —
 
-st.set_page_config(page_title=“暖心繪本大師”, page_icon=“🎨", layout=“centered”)
+st.set_page_config(page_title=“暖心繪本大師”, page_icon="🎨", layout="centered”)
 
 # — 2. 安全讀取秘密金鑰 —
 
