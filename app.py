@@ -4,7 +4,7 @@ from streamlit_mic_recorder import mic_recorder
 
 # — 1. 網頁基礎設定 —
 
-st.set_page_config(page_title=“暖心繪本大師”, page_icon=“🎨”, layout=“centered”)
+st.set_page_config(page_title=“暖心繪本大師”, page_icon=“🎨", layout=“centered”)
 
 # — 2. 安全讀取秘密金鑰 —
 
@@ -23,16 +23,14 @@ html, body, [class*="css"] {{
     font-size: 17px;
 }}
 
-/* 背景紋理 */
 .stApp {{
-    background: 
+    background:
         radial-gradient(ellipse at 20% 10%, rgba(255, 218, 150, 0.25) 0%, transparent 50%),
         radial-gradient(ellipse at 80% 90%, rgba(255, 182, 120, 0.2) 0%, transparent 50%),
         linear-gradient(160deg, #FFF9F0 0%, #FFF3E0 50%, #FFF8F0 100%);
     min-height: 100vh;
 }}
 
-/* 主標題 */
 .main-title {{
     font-family: 'ZCOOL XiaoWei', serif;
     background: linear-gradient(135deg, #C0392B 0%, #E67E22 40%, #F39C12 70%, #D35400 100%);
@@ -58,7 +56,6 @@ html, body, [class*="css"] {{
     animation: fadeIn 1.5s ease-out;
 }}
 
-/* 裝飾分隔線 */
 .deco-divider {{
     display: flex;
     align-items: center;
@@ -73,16 +70,14 @@ html, body, [class*="css"] {{
 }}
 .deco-icon {{ font-size: 20px; }}
 
-/* 步驟卡片 */
 .step-card {{
     background: rgba(255, 255, 255, 0.75);
     backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     padding: 22px 26px;
     border-radius: 16px;
     border: 1px solid rgba(230, 126, 34, 0.2);
     border-left: 5px solid #E67E22;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
     margin-bottom: 20px;
     animation: slideUp 0.6s ease-out;
 }}
@@ -102,7 +97,6 @@ html, body, [class*="css"] {{
     line-height: 1.7;
 }}
 
-/* 複製橫幅 */
 .copy-banner {{
     background: linear-gradient(135deg, #D5F5E3, #A9DFBF);
     border: 2px solid #27AE60;
@@ -115,9 +109,9 @@ html, body, [class*="css"] {{
 }}
 
 @keyframes breath {{
-    0%   {{ transform: scale(1);    box-shadow: 0 4px 20px rgba(39,174,96,0.2); }}
+    0%   {{ transform: scale(1);     box-shadow: 0 4px 20px rgba(39,174,96,0.2); }}
     50%  {{ transform: scale(1.015); box-shadow: 0 8px 30px rgba(39,174,96,0.35); }}
-    100% {{ transform: scale(1);    box-shadow: 0 4px 20px rgba(39,174,96,0.2); }}
+    100% {{ transform: scale(1);     box-shadow: 0 4px 20px rgba(39,174,96,0.2); }}
 }}
 
 @keyframes fadeInDown {{
@@ -133,7 +127,6 @@ html, body, [class*="css"] {{
     to   {{ opacity: 1; transform: translateY(0); }}
 }}
 
-/* 按鈕美化 */
 .stButton > button[kind="primary"] {{
     background: linear-gradient(135deg, #E67E22, #D35400) !important;
     border: none !important;
@@ -146,12 +139,7 @@ html, body, [class*="css"] {{
     box-shadow: 0 4px 20px rgba(230, 126, 34, 0.4) !important;
     transition: all 0.3s ease !important;
 }}
-.stButton > button[kind="primary"]:hover {{
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 28px rgba(230, 126, 34, 0.55) !important;
-}}
 
-/* Textarea & Selectbox */
 .stTextArea textarea {{
     border: 1.5px solid rgba(230, 126, 34, 0.3) !important;
     border-radius: 12px !important;
@@ -159,10 +147,6 @@ html, body, [class*="css"] {{
     font-family: 'Noto Serif TC', serif !important;
     font-size: 15px !important;
     color: #4A2C00;
-}}
-.stTextArea textarea:focus {{
-    border-color: #E67E22 !important;
-    box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.15) !important;
 }}
 
 [data-testid="stSidebar"] {{ display: {sidebar_display}; }}
@@ -174,10 +158,10 @@ html, body, [class*="css"] {{
 # — 4. 主畫面 UI —
 
 st.markdown(’<h1 class="main-title">暖心繪本大師</h1>’, unsafe_allow_html=True)
-st.markdown(”<p class='subtitle'>✦ 分享回憶故事，生成精美繪本製作指令 ✦</p>”, unsafe_allow_html=True)
+st.markdown(’<p class="subtitle">✦ 分享回憶故事，生成精美繪本製作指令 ✦</p>’, unsafe_allow_html=True)
 
 if not api_key:
-st.error(“🔑 偵測不到內置金鑰。請在 Streamlit Cloud → Settings → Secrets 設定 `GEMINI_API_KEY`。”)
+st.error(“🔑 偵測不到內置金鑰。請在 Streamlit Cloud → Settings → Secrets 設定 GEMINI_API_KEY。”)
 with st.sidebar:
 st.markdown(”### 🛠️ 測試模式”)
 api_key = st.text_input(“手動輸入 API Key：”, type=“password”, placeholder=“AIza…”)
@@ -189,29 +173,26 @@ st.markdown(”””
 
 <div class="step-card">
     <h3>第一步　分享回憶故事</h3>
-    <p>按下紅點按鈕開始錄音，講完故事後再按一次即可結束。<br>錄音完成後 AI 將自動將語音轉為文字，您可在下方草稿欄修改。</p>
+    <p>按下紅點按鈕開始錄音，講完故事後再按一次即可結束。錄音完成後 AI 將自動轉為文字，您可在下方草稿欄修改。</p>
 </div>
 """, unsafe_allow_html=True)
 
 audio_record = mic_recorder(
 start_prompt=“🔴 開始錄音”,
 stop_prompt=“⏹️ 結束錄音”,
-key=‘recorder’
+key=“recorder”
 )
 
-if ‘transcript’ not in st.session_state:
+if “transcript” not in st.session_state:
 st.session_state.transcript = “”
-
-# 🔧 修正：使用 audio_record.get() 安全取得 mime_type
 
 if audio_record and api_key:
 with st.spinner(“🧠 AI 正在傾聽並記錄您的故事…”):
 try:
 genai.configure(api_key=api_key)
-# 🔧 修正：使用穩定的 gemini-2.0-flash 模型進行轉錄
 model = genai.GenerativeModel(“gemini-2.0-flash”)
-mime_type = audio_record.get(“mime_type”, “audio/webm”)  # 🔧 安全取得格式
-audio_data = {“mime_type”: mime_type, “data”: audio_record[‘bytes’]}
+mime_type = audio_record.get(“mime_type”, “audio/webm”)
+audio_data = {“mime_type”: mime_type, “data”: audio_record[“bytes”]}
 response = model.generate_content([“請將這段語音轉錄為繁體中文，盡量保留原本的口氣與情感。”, audio_data])
 st.session_state.transcript = response.text
 st.toast(“語音辨識成功！”, icon=“✅”)
@@ -225,9 +206,6 @@ value=st.session_state.transcript,
 key=“transcript_area”,
 placeholder=“錄音後，您的故事將顯示在這裡…”
 )
-
-# 同步修改回 session_state
-
 st.session_state.transcript = st.session_state.get(“transcript_area”, st.session_state.transcript)
 
 # — 6. 第二步：挑選畫風 —
@@ -259,19 +237,17 @@ st.warning(“⚠️ 請先輸入 API Key。”)
 elif not st.session_state.transcript.strip():
 st.warning(“⚠️ 請先錄音或在草稿欄輸入故事內容。”)
 else:
-# 🔧 修正：expanded=True 讓使用者能看到進度
 with st.status(“🧠 AI 正在編排精美的繪本分鏡…”, expanded=True) as status:
 try:
 genai.configure(api_key=api_key)
-# 🔧 修正：使用正確的模型名稱（gemini-2.5-flash-preview-05-14 或 gemini-2.0-flash）
 model = genai.GenerativeModel(
 model_name=“gemini-2.5-flash-preview-05-14”,
 system_instruction=(
-f”你是一位專業繪本編輯。請根據使用者的故事，製作一份完整的繪本製作指令。\n”
+“你是一位專業繪本編輯。請根據使用者的故事，製作一份完整的繪本製作指令。\n”
 f”畫風要求：{style_options[selected_style]}\n”
-f”格式要求：共 10 頁分鏡，每頁包含：\n”
-f”1. 頁面編號\n2. 畫面構圖描述（英文，供 AI 繪圖使用）\n3. 繁體中文故事文字（2-3 句）\n”
-f”請用清晰的條列格式輸出。”
+“格式要求：共 10 頁分鏡，每頁包含：\n”
+“1. 頁面編號\n2. 畫面構圖描述（英文，供 AI 繪圖使用）\n3. 繁體中文故事文字（2-3 句）\n”
+“請用清晰的條列格式輸出。”
 )
 )
 response = model.generate_content(st.session_state.transcript)
@@ -294,5 +270,5 @@ status.update(label=“✅ 編排完成！”, state=“complete”, expanded=Fa
             )
 
         except Exception as e:
-            st.error(f"⚠️ 生成失敗，請確認模型名稱與 API Key 是否正確。\n\n錯誤詳情：{e}")
+            st.error(f"⚠️ 生成失敗：{e}")
 ```
