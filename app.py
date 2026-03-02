@@ -124,5 +124,5 @@ if st.button("✨ 生成繪本製作指令", use_container_width=True, type="pri
                 
                 st.code(response.text, language="text")
                 st.link_button("🚀 前往 Google 官網開始製作", "https://gemini.google.com/")
-            except:
-                st.error("生成失敗，請稍候重試。")
+            except Exception as e:
+                st.error(f"生成失敗！真實原因：{e}")
