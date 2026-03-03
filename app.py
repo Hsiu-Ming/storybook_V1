@@ -203,22 +203,27 @@ if st.session_state.app_step < 3:
     if st.session_state.app_step > 1:
         st.markdown('<div class="locked-card"><h3>🔒 最終關：尚未解鎖</h3><p>完成第二關的設定後，魔法按鈕就會出現！</p></div>', unsafe_allow_html=True)
 else:
-    st.markdown('<div class="unlocked-card" style="border-color: #27AE60;"><h3 style="color: #27AE60;">👑 最終關：見證魔法時刻</h3><p>請點擊下方綠色大按鈕，見證您的故事變成繪本腳本！</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="unlocked-card" style="border-color: #27AE60;"><h3 style="color: #27AE60;">👑 最終關：見證魔法時刻</h3><p>請點擊下方綠色大按鈕，為您的專屬 Gemini Gem 產生標準化的繪本指令！</p></div>', unsafe_allow_html=True)
 
-    if st.button("🌟 施展魔法！生成繪本指令", use_container_width=True, type="primary"):
-        with st.status("🧠 AI 正在為您編排精美的分鏡...", expanded=True) as status:
+    if st.button("🌟 施展魔法！生成 Gemini 專屬繪本指令", use_container_width=True, type="primary"):
+        with st.status("🧠 AI 正在為您編排結構化的 Markdown 分鏡...", expanded=True) as status:
             try:
                 style_en = style_options[st.session_state.get("selected_style", list(style_options.keys())[0])]
                 
+                # 升級為 AI 友善的嚴格 Markdown 格式指令
                 sys_instruct = (
-                    "你是一位專業繪本編輯。請根據使用者的故事，製作一份完整的繪本製作指令。\n"
-                    f"畫風要求：{style_en}\n"
-                    f"格式要求：共 {st.session_state.page_count} 頁分鏡，每頁包含：\n"
-                    "1. 頁面編號\n2. 畫面構圖描述（英文，供 AI 繪圖使用）\n3. 繁體中文故事文字（2-3 句）\n"
-                    "請用清晰的條列格式輸出。"
+                    "你是一位專業的繪本編輯與 AI 溝通專家。請根據使用者的故事，製作一份格式嚴謹的 Markdown 繪本製作指令。\n"
+                    "這份指令將直接提供給另一個 AI（Gemini Gem）閱讀，用來精準生成連續頁面的繪本。\n\n"
+                    f"**全局畫風設定 (Global Style)**: {style_en}\n"
+                    f"**總頁數 (Total Pages)**: {st.session_state.page_count}\n\n"
+                    "**【嚴格輸出格式要求】**\n"
+                    "請直接輸出分鏡內容，不需任何開場白或結語。每一頁請嚴格遵守以下 Markdown 格式：\n\n"
+                    "## Page [頁碼]\n"
+                    "**🖼️ Image Prompt**: [用精準的英文描述畫面構圖、人物特徵、動作、背景與光影。請務必在句尾強制加上全局畫風設定，確保每頁風格一致]\n"
+                    "**📖 Story Text**: [2-3 句繁體中文故事文字，充滿溫度與畫面感]\n"
+                    "---\n"
                 )
                 
-                # 換成 2.5 flash 模型
                 response = client.models.generate_content(
                     model="gemini-2.5-flash",
                     contents=st.session_state.transcript,
@@ -229,12 +234,15 @@ else:
                 status.update(label="✅ 繪本指令編排完成！", state="complete", expanded=False)
                 
                 st.balloons() 
-                st.success("📋 請點擊下方區塊右上角的圖示複製文字，然後前往 Google AI Studio 貼上即可開始製作！")
-                st.code(response.text, language="text")
+                st.success("📋 請點擊下方區塊右上角的圖示複製 Markdown 代碼，然後前往您的 Gemini Gem 貼上並送出！")
+                
+                # 將輸出格式設為 markdown
+                st.code(response.text, language="markdown")
 
+                # 更新為專屬的 Gem 連結
                 st.link_button(
-                    "🚀 前往 Google AI Studio 開始製作",
-                    "https://aistudio.google.com/",
+                    "🚀 前往專屬 Gemini Gem (Storybook) 開始製作",
+                    "https://gemini.google.com/gem/storybook",
                     use_container_width=True
                 )
 
