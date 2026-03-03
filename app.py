@@ -91,7 +91,7 @@ if audio_record and client:
                 prompt = "請將這段語音轉錄為繁體中文，並直接將內容潤飾成適合製作繪本的優美、流暢文字，增加畫面感與溫暖的情感。"
                 
                 response = client.models.generate_content(
-                    model="gemini-1.5-flash",
+                    model="gemini-2.0-flash",
                     contents=[prompt, audio_part]
                 )
                 
