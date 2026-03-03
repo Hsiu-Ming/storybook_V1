@@ -24,7 +24,7 @@ client = None
 if api_key:
     client = genai.Client(api_key=api_key)
 
-# --- 3. UI 美化 CSS ---
+# --- 3. UI 美化 CSS (升級 3D 魔法城門特效 & 修復圖示) ---
 sidebar_display = "none" if api_key else "block"
 st.markdown(f"""
 <style>
@@ -44,16 +44,69 @@ html, body, [class*="css"], .stApp {{
 
 .stApp {{ background: radial-gradient(ellipse at 20% 10%, rgba(255, 218, 150, 0.25) 0%, transparent 50%), radial-gradient(ellipse at 80% 90%, rgba(255, 182, 120, 0.2) 0%, transparent 50%), linear-gradient(160deg, #FFF9F0 0%, #FFF3E0 50%, #FFF8F0 100%); min-height: 100vh; }}
 .main-title {{ font-weight: 700; background: linear-gradient(135deg, #C0392B 0%, #E67E22 40%, #F39C12 70%, #D35400 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 48px !important; text-align: center; letter-spacing: 4px; margin-bottom: 8px; }}
+
 .custom-progress-bg {{ background-color: #E5E7E9; border-radius: 20px; height: 28px; width: 100%; margin: 20px 0 30px 0; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; }}
 .custom-progress-bar {{ background: linear-gradient(90deg, #F1C40F, #F39C12, #D35400); height: 100%; border-radius: 20px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; transition: width 0.8s cubic-bezier(0.25, 0.8, 0.25, 1); }}
-@keyframes popIn {{ 0% {{ transform: scale(0.85); opacity: 0; }} 60% {{ transform: scale(1.03); opacity: 1; }} 100% {{ transform: scale(1); opacity: 1; }} }}
-.unlocked-card {{ background: rgba(255, 255, 255, 0.95); padding: 24px 30px; border-radius: 20px; border: 3px solid #F39C12; box-shadow: 0 10px 30px rgba(230, 126, 34, 0.2); margin-bottom: 24px; animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }}
-.locked-card {{ background: rgba(240, 240, 240, 0.6); padding: 20px 30px; border-radius: 20px; border: 3px dashed #BDC3C7; margin-bottom: 24px; color: #7F8C8D; filter: grayscale(100%); opacity: 0.6; transition: all 0.5s ease; }}
+
+/* 🌟 全新特效：魔法城門展開 (結合模糊、發光、放大落下) */
+@keyframes magicalGateOpen {{
+    0% {{ opacity: 0; transform: translateY(-30px) scale(0.9); filter: blur(8px) brightness(0.5); }}
+    50% {{ opacity: 0.8; transform: translateY(10px) scale(1.02); filter: blur(2px) brightness(1.1); box-shadow: 0 15px 40px rgba(230, 126, 34, 0.4); }}
+    100% {{ opacity: 1; transform: translateY(0) scale(1); filter: blur(0) brightness(1); box-shadow: 0 10px 30px rgba(230, 126, 34, 0.2); }}
+}}
+
+/* 🔓 已解鎖的彩色卡片 (明亮展開) */
+.unlocked-card {{ 
+    background: rgba(255, 255, 255, 0.95); 
+    padding: 24px 30px; 
+    border-radius: 20px; 
+    border: 3px solid #F39C12; 
+    border-top: 12px solid #F39C12; /* 加厚頂部增加大門感 */
+    margin-bottom: 24px; 
+    animation: magicalGateOpen 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; 
+}}
+
+/* 🔒 未解鎖的灰階卡片 (厚重緊閉的城門) */
+.locked-card {{ 
+    background: linear-gradient(180deg, #EAECEE 0%, #D5D8DC 100%); 
+    padding: 20px 30px; 
+    border-radius: 20px; 
+    border: 3px solid #ABB2B9; 
+    border-top: 12px solid #808B96; /* 沉重的鐵門感 */
+    margin-bottom: 24px; 
+    color: #7F8C8D; 
+    opacity: 0.7; 
+    box-shadow: inset 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.5s ease; 
+}}
 .locked-card h3 {{ color: #7F8C8D !important; }}
 .unlocked-card h3 {{ color: #D35400; font-weight: 700; font-size: 26px; margin: 0 0 12px 0; }}
 .unlocked-card p {{ color: #5C4033; font-size: 18px; line-height: 1.8; }}
-.next-step-btn > button {{ background: white !important; color: #D35400 !important; border: 3px solid #D35400 !important; border-radius: 16px !important; font-weight: 700 !important; font-size: 20px !important; padding: 12px 24px !important; box-shadow: 0 4px 10px rgba(211, 84, 0, 0.15) !important; transition: all 0.2s ease !important; }}
-.next-step-btn > button:hover {{ background: #FFF3E0 !important; transform: translateY(-4px); box-shadow: 0 8px 15px rgba(211, 84, 0, 0.25) !important; }}
+
+/* 闖關按鈕特效：加入呼吸燈光暈引導 */
+@keyframes buttonPulse {{
+    0% {{ box-shadow: 0 4px 10px rgba(211, 84, 0, 0.15); }}
+    50% {{ box-shadow: 0 4px 25px rgba(211, 84, 0, 0.4); }}
+    100% {{ box-shadow: 0 4px 10px rgba(211, 84, 0, 0.15); }}
+}}
+
+.next-step-btn > button {{ 
+    background: white !important; 
+    color: #D35400 !important; 
+    border: 3px solid #D35400 !important; 
+    border-radius: 16px !important; 
+    font-weight: 700 !important; 
+    font-size: 20px !important; 
+    padding: 12px 24px !important; 
+    animation: buttonPulse 2.5s infinite ease-in-out;
+    transition: all 0.3s ease !important; 
+}}
+.next-step-btn > button:hover {{ 
+    background: #FFF3E0 !important; 
+    transform: translateY(-4px) scale(1.03); 
+    box-shadow: 0 10px 20px rgba(211, 84, 0, 0.3) !important; 
+}}
+
 .stButton > button[kind="primary"] {{ background: linear-gradient(135deg, #27AE60, #2ECC71) !important; border: none !important; border-radius: 16px !important; font-weight: 700 !important; font-size: 22px !important; padding: 18px !important; color: white !important; box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4) !important; }}
 [data-testid="stSidebar"] {{ display: {sidebar_display}; }}
 </style>
@@ -139,10 +192,10 @@ with col_btn1:
 
 with col_btn2:
     st.markdown('<div class="next-step-btn">', unsafe_allow_html=True)
-    if st.button("✅ 故事完成了，進入第二關 ➔", use_container_width=True):
+    if st.button("✅ 故事完成了，開啟下一關 ➔", use_container_width=True):
         if st.session_state.transcript.strip():
             if st.session_state.app_step < 2:
-                st.toast("🎉 恭喜通過第一關！解鎖畫風選擇！", icon="🔓")
+                st.toast("🎉 城門已開啟！解鎖畫風選擇！", icon="🔓")
                 time.sleep(1.2)
             st.session_state.app_step = max(st.session_state.app_step, 2)
             st.rerun()
@@ -156,7 +209,7 @@ st.write("---")
 # 🚩 第二關：挑選畫風與頁數
 # ==========================================
 if st.session_state.app_step < 2:
-    st.markdown('<div class="locked-card"><h3>🔒 第二關：尚未解鎖</h3><p>請先在上方完成故事分享！</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="locked-card"><h3>🔒 第二關：重重城門尚未解鎖</h3><p>完成上方的故事分享，就能推開這扇大門！</p></div>', unsafe_allow_html=True)
 else:
     st.markdown('<div class="unlocked-card"><h3>🎯 第二關：為故事穿上美麗的外衣</h3><p>來挑選您最喜歡的繪畫風格吧！</p></div>', unsafe_allow_html=True)
 
@@ -192,9 +245,9 @@ else:
                     st.toast("無法分析，請手動調整", icon="⚠️")
     
     st.markdown('<div class="next-step-btn">', unsafe_allow_html=True)
-    if st.button("✅ 設定好了，進入最終關卡 ➔", use_container_width=True):
+    if st.button("✅ 設定好了，推開最終大門 ➔", use_container_width=True):
         if st.session_state.app_step < 3:
-            st.toast("🎉 恭喜通過第二關！即將施展魔法！", icon="🔓")
+            st.toast("🎉 通往終點的城門已展開！", icon="🔓")
             time.sleep(1.2)
         st.session_state.app_step = 3
         st.session_state.selected_style = selected_style
@@ -204,21 +257,18 @@ else:
     st.write("---")
 
 # ==========================================
-# 🚩 第三關：生成指令 (純中文自動連載版)
+# 🚩 第三關：生成指令 (純中文全自動連載版)
 # ==========================================
 if st.session_state.app_step < 3:
     if st.session_state.app_step > 1:
-        st.markdown('<div class="locked-card"><h3>🔒 最終關：尚未解鎖</h3><p>完成第二關的設定後，魔法按鈕就會出現！</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="locked-card"><h3>🔒 最終關：神秘的魔法陣</h3><p>設定好您的畫風後，就能啟動這座魔法陣囉！</p></div>', unsafe_allow_html=True)
 else:
-    st.markdown('<div class="unlocked-card" style="border-color: #27AE60;"><h3 style="color: #27AE60;">👑 最終關：見證魔法時刻</h3><p>請點擊下方綠色大按鈕，產生適合貼給 Gemini Gem 的純中文連載腳本！</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="unlocked-card" style="border-color: #27AE60; border-top-color: #27AE60;"><h3 style="color: #27AE60;">👑 最終關：見證魔法時刻</h3><p>請點擊下方綠色大按鈕，產生適合貼給 Gemini Gem 的純中文連載腳本！</p></div>', unsafe_allow_html=True)
 
     if st.button("🌟 施展魔法！生成純中文繪本腳本", use_container_width=True, type="primary"):
         with st.status("🧠 AI 正在為您編排純中文的分鏡腳本...", expanded=True) as status:
             try:
-                # 直接使用使用者選擇的中文畫風名稱，不需要轉換成英文
                 style_zh = selected_style
-                
-                # 升級為帶有「防呆前導詞」的純中文提示詞
                 sys_instruct = (
                     "你是一位專業的繪本編輯。請根據使用者的故事，製作一份純繁體中文的 Markdown 繪本分鏡腳本。\n"
                     "這份腳本將會直接貼給 Gemini Gem，請在內容開頭自動加上「分次生成」的指令語，引導 AI 一頁一頁畫圖。\n\n"
