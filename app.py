@@ -91,7 +91,7 @@ if audio_record and client:
                 prompt = "請將這段語音轉錄為繁體中文，並直接將內容潤飾成適合製作繪本的優美、流暢文字，增加畫面感與溫暖的情感。"
                 
                 response = client.models.generate_content(
-                    model="gemini-2.0-flash",
+                    model="gemini-2.5-flash",
                     contents=[prompt, audio_part]
                 )
                 
@@ -116,7 +116,7 @@ with col_btn1:
                 try:
                     polish_prompt = f"請將以下文字重新潤飾。修正錯字、語句不順，轉化為溫暖、充滿畫面感的繪本文字：\n\n{st.session_state.transcript}"
                     response = client.models.generate_content(
-                        model="gemini-2.0-flash",
+                        model="gemini-2.5-flash",
                         contents=polish_prompt
                     )
                     st.session_state.transcript = response.text
@@ -174,7 +174,7 @@ else:
                 try:
                     page_prompt = f"根據故事長度建議繪本頁數，只回傳4到24之間的數字：\n\n{st.session_state.transcript}"
                     response = client.models.generate_content(
-                        model="gemini-2.0-flash",
+                        model="gemini-2.5-flash",
                         contents=page_prompt
                     )
                     st.session_state.page_count = int(response.text.strip())
@@ -232,7 +232,7 @@ else:
 
                 st.link_button(
                     "🚀 前往 Google AI Studio 開始製作",
-                    "https://aistudio.google.com/",
+                    "https://gemini.google.com/gem/storybook",
                     use_container_width=True
                 )
 
