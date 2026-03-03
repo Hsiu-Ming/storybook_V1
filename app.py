@@ -5,7 +5,7 @@ from streamlit_mic_recorder import mic_recorder
 import time
 
 # --- 1. 網頁基礎設定 ---
-st.set_page_config(page_title="生命故事大師", page_icon="🎨", layout="centered")
+st.set_page_config(page_title="暖心繪本大師", page_icon="🎨", layout="centered")
 
 # --- 2. 安全讀取秘密金鑰與狀態初始化 ---
 api_key = st.secrets.get("GEMINI_API_KEY")
@@ -30,15 +30,18 @@ st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
 
-html, body, [class*="css"] { 
+/* 👇 正確的字體設定，解決缺字問題，同時保護系統圖示不變亂碼 */
+html, body, [class*="css"], .stApp {{ 
     font-family: 'Noto Sans TC', 'Taipei Sans TC Beta', sans-serif !important; 
     font-size: 18px; 
     letter-spacing: 0.5px; 
-}
-/* 👇 這是關鍵：把 Streamlit 的圖示字體還給它，避免出現 arrow_down 等亂碼 */
-.material-symbols-rounded, .material-icons, [data-testid="stIconMaterial"] {
+}}
+
+/* 確保 Streamlit 內建圖示（打勾、箭頭）維持原始字體 */
+.material-symbols-rounded, .material-icons, [data-testid="stIconMaterial"] {{
     font-family: 'Material Symbols Rounded', 'Material Icons' !important;
-}
+}}
+
 .stApp {{ background: radial-gradient(ellipse at 20% 10%, rgba(255, 218, 150, 0.25) 0%, transparent 50%), radial-gradient(ellipse at 80% 90%, rgba(255, 182, 120, 0.2) 0%, transparent 50%), linear-gradient(160deg, #FFF9F0 0%, #FFF3E0 50%, #FFF8F0 100%); min-height: 100vh; }}
 .main-title {{ font-weight: 700; background: linear-gradient(135deg, #C0392B 0%, #E67E22 40%, #F39C12 70%, #D35400 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 48px !important; text-align: center; letter-spacing: 4px; margin-bottom: 8px; }}
 .custom-progress-bg {{ background-color: #E5E7E9; border-radius: 20px; height: 28px; width: 100%; margin: 20px 0 30px 0; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; }}
@@ -96,7 +99,6 @@ if audio_record and client:
                 audio_part = types.Part.from_bytes(data=current_audio_bytes, mime_type=mime_type)
                 prompt = "請將這段語音轉錄為繁體中文，並直接將內容潤飾成適合製作繪本的優美、流暢文字，增加畫面感與溫暖的情感。"
                 
-                # 換成 2.5 flash 模型
                 response = client.models.generate_content(
                     model="gemini-2.5-flash",
                     contents=[prompt, audio_part]
@@ -122,7 +124,6 @@ with col_btn1:
             with st.spinner("✍️ 正在修飾文句..."):
                 try:
                     polish_prompt = f"請將以下文字重新潤飾。修正錯字、語句不順，轉化為溫暖、充滿畫面感的繪本文字：\n\n{st.session_state.transcript}"
-                    # 換成 2.5 flash 模型
                     response = client.models.generate_content(
                         model="gemini-2.5-flash",
                         contents=polish_prompt
@@ -181,7 +182,6 @@ else:
             with st.spinner("計算中..."):
                 try:
                     page_prompt = f"根據故事長度建議繪本頁數，只回傳4到24之間的數字：\n\n{st.session_state.transcript}"
-                    # 換成 2.5 flash 模型
                     response = client.models.generate_content(
                         model="gemini-2.5-flash",
                         contents=page_prompt
@@ -204,7 +204,7 @@ else:
     st.write("---")
 
 # ==========================================
-# 🚩 第三關：生成指令
+# 🚩 第三關：生成指令 (Markdown 專用版)
 # ==========================================
 if st.session_state.app_step < 3:
     if st.session_state.app_step > 1:
@@ -217,7 +217,6 @@ else:
             try:
                 style_en = style_options[st.session_state.get("selected_style", list(style_options.keys())[0])]
                 
-                # 升級為 AI 友善的嚴格 Markdown 格式指令
                 sys_instruct = (
                     "你是一位專業的繪本編輯與 AI 溝通專家。請根據使用者的故事，製作一份格式嚴謹的 Markdown 繪本製作指令。\n"
                     "這份指令將直接提供給另一個 AI（Gemini Gem）閱讀，用來精準生成連續頁面的繪本。\n\n"
@@ -243,10 +242,8 @@ else:
                 st.balloons() 
                 st.success("📋 請點擊下方區塊右上角的圖示複製 Markdown 代碼，然後前往您的 Gemini Gem 貼上並送出！")
                 
-                # 將輸出格式設為 markdown
                 st.code(response.text, language="markdown")
 
-                # 更新為專屬的 Gem 連結
                 st.link_button(
                     "🚀 前往專屬 Gemini Gem (Storybook) 開始製作",
                     "https://gemini.google.com/gem/storybook",
