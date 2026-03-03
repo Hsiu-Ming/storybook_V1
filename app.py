@@ -5,7 +5,7 @@ from streamlit_mic_recorder import mic_recorder
 import time
 
 # --- 1. 網頁基礎設定 ---
-st.set_page_config(page_title="暖心繪本大師", page_icon="🎨", layout="centered")
+st.set_page_config(page_title="生命故事大師", page_icon="🎨", layout="centered")
 
 # --- 2. 安全讀取秘密金鑰與狀態初始化 ---
 api_key = st.secrets.get("GEMINI_API_KEY")
@@ -30,8 +30,15 @@ st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
 
-* {{ font-family: 'Noto Sans TC', 'Taipei Sans TC Beta', sans-serif !important; }}
-html, body, [class*="css"] {{ font-size: 18px; letter-spacing: 0.5px; }}
+html, body, [class*="css"] { 
+    font-family: 'Noto Sans TC', 'Taipei Sans TC Beta', sans-serif !important; 
+    font-size: 18px; 
+    letter-spacing: 0.5px; 
+}
+/* 👇 這是關鍵：把 Streamlit 的圖示字體還給它，避免出現 arrow_down 等亂碼 */
+.material-symbols-rounded, .material-icons, [data-testid="stIconMaterial"] {
+    font-family: 'Material Symbols Rounded', 'Material Icons' !important;
+}
 .stApp {{ background: radial-gradient(ellipse at 20% 10%, rgba(255, 218, 150, 0.25) 0%, transparent 50%), radial-gradient(ellipse at 80% 90%, rgba(255, 182, 120, 0.2) 0%, transparent 50%), linear-gradient(160deg, #FFF9F0 0%, #FFF3E0 50%, #FFF8F0 100%); min-height: 100vh; }}
 .main-title {{ font-weight: 700; background: linear-gradient(135deg, #C0392B 0%, #E67E22 40%, #F39C12 70%, #D35400 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 48px !important; text-align: center; letter-spacing: 4px; margin-bottom: 8px; }}
 .custom-progress-bg {{ background-color: #E5E7E9; border-radius: 20px; height: 28px; width: 100%; margin: 20px 0 30px 0; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; }}
