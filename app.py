@@ -86,10 +86,10 @@ if audio_record and client:
         with st.spinner("🧠 正在專心聽您說故事..."):
             try:
                 mime_type = audio_record.get("mime_type", "audio/webm")
-                # 新版 SDK 的檔案上傳寫法
                 audio_part = types.Part.from_bytes(data=current_audio_bytes, mime_type=mime_type)
                 prompt = "請將這段語音轉錄為繁體中文，並直接將內容潤飾成適合製作繪本的優美、流暢文字，增加畫面感與溫暖的情感。"
                 
+                # 換成 2.5 flash 模型
                 response = client.models.generate_content(
                     model="gemini-2.5-flash",
                     contents=[prompt, audio_part]
@@ -115,6 +115,7 @@ with col_btn1:
             with st.spinner("✍️ 正在修飾文句..."):
                 try:
                     polish_prompt = f"請將以下文字重新潤飾。修正錯字、語句不順，轉化為溫暖、充滿畫面感的繪本文字：\n\n{st.session_state.transcript}"
+                    # 換成 2.5 flash 模型
                     response = client.models.generate_content(
                         model="gemini-2.5-flash",
                         contents=polish_prompt
@@ -173,6 +174,7 @@ else:
             with st.spinner("計算中..."):
                 try:
                     page_prompt = f"根據故事長度建議繪本頁數，只回傳4到24之間的數字：\n\n{st.session_state.transcript}"
+                    # 換成 2.5 flash 模型
                     response = client.models.generate_content(
                         model="gemini-2.5-flash",
                         contents=page_prompt
@@ -208,7 +210,6 @@ else:
             try:
                 style_en = style_options[st.session_state.get("selected_style", list(style_options.keys())[0])]
                 
-                # 新版 SDK 的系統指令設定方式
                 sys_instruct = (
                     "你是一位專業繪本編輯。請根據使用者的故事，製作一份完整的繪本製作指令。\n"
                     f"畫風要求：{style_en}\n"
@@ -217,8 +218,9 @@ else:
                     "請用清晰的條列格式輸出。"
                 )
                 
+                # 換成 2.5 flash 模型
                 response = client.models.generate_content(
-                    model="gemini-2.0-flash",
+                    model="gemini-2.5-flash",
                     contents=st.session_state.transcript,
                     config=types.GenerateContentConfig(
                         system_instruction=sys_instruct
@@ -232,7 +234,7 @@ else:
 
                 st.link_button(
                     "🚀 前往 Google AI Studio 開始製作",
-                    "https://gemini.google.com/gem/storybook",
+                    "https://aistudio.google.com/",
                     use_container_width=True
                 )
 
