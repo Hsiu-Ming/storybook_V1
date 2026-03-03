@@ -204,30 +204,36 @@ else:
     st.write("---")
 
 # ==========================================
-# 🚩 第三關：生成指令 (Markdown 專用版)
+# 🚩 第三關：生成指令 (純中文自動連載版)
 # ==========================================
 if st.session_state.app_step < 3:
     if st.session_state.app_step > 1:
         st.markdown('<div class="locked-card"><h3>🔒 最終關：尚未解鎖</h3><p>完成第二關的設定後，魔法按鈕就會出現！</p></div>', unsafe_allow_html=True)
 else:
-    st.markdown('<div class="unlocked-card" style="border-color: #27AE60;"><h3 style="color: #27AE60;">👑 最終關：見證魔法時刻</h3><p>請點擊下方綠色大按鈕，為您的專屬 Gemini Gem 產生標準化的繪本指令！</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="unlocked-card" style="border-color: #27AE60;"><h3 style="color: #27AE60;">👑 最終關：見證魔法時刻</h3><p>請點擊下方綠色大按鈕，產生適合貼給 Gemini Gem 的純中文連載腳本！</p></div>', unsafe_allow_html=True)
 
-    if st.button("🌟 施展魔法！生成 Gemini 專屬繪本指令", use_container_width=True, type="primary"):
-        with st.status("🧠 AI 正在為您編排結構化的 Markdown 分鏡...", expanded=True) as status:
+    if st.button("🌟 施展魔法！生成純中文繪本腳本", use_container_width=True, type="primary"):
+        with st.status("🧠 AI 正在為您編排純中文的分鏡腳本...", expanded=True) as status:
             try:
-                style_en = style_options[st.session_state.get("selected_style", list(style_options.keys())[0])]
+                # 直接使用使用者選擇的中文畫風名稱，不需要轉換成英文
+                style_zh = selected_style
                 
+                # 升級為帶有「防呆前導詞」的純中文提示詞
                 sys_instruct = (
-                    "你是一位專業的繪本編輯與 AI 溝通專家。請根據使用者的故事，製作一份格式嚴謹的 Markdown 繪本製作指令。\n"
-                    "這份指令將直接提供給另一個 AI（Gemini Gem）閱讀，用來精準生成連續頁面的繪本。\n\n"
-                    f"**全局畫風設定 (Global Style)**: {style_en}\n"
-                    f"**總頁數 (Total Pages)**: {st.session_state.page_count}\n\n"
-                    "**【嚴格輸出格式要求】**\n"
-                    "請直接輸出分鏡內容，不需任何開場白或結語。每一頁請嚴格遵守以下 Markdown 格式：\n\n"
-                    "## Page [頁碼]\n"
-                    "**🖼️ Image Prompt**: [用精準的英文描述畫面構圖、人物特徵、動作、背景與光影。請務必在句尾強制加上全局畫風設定，確保每頁風格一致]\n"
-                    "**📖 Story Text**: [2-3 句繁體中文故事文字，充滿溫度與畫面感]\n"
+                    "你是一位專業的繪本編輯。請根據使用者的故事，製作一份純繁體中文的 Markdown 繪本分鏡腳本。\n"
+                    "這份腳本將會直接貼給 Gemini Gem，請在內容開頭自動加上「分次生成」的指令語，引導 AI 一頁一頁畫圖。\n\n"
+                    f"**畫風設定**: {style_zh}\n"
+                    f"**總頁數**: {st.session_state.page_count}\n\n"
+                    "【請嚴格按照以下格式輸出，包含開頭的引導對話】：\n\n"
+                    "你好！這是我準備好的繪本分鏡腳本。\n"
+                    "請先閱讀下方完整腳本，了解故事脈絡與畫風。閱讀完畢後，請**只先幫我生成「第 1 頁」的圖片**，並在圖片下方附上第 1 頁的「故事內文」。\n"
+                    "當我回覆「下一頁」時，你再依照順序生成下一頁的圖片與文字。我們一頁一頁來！\n\n"
+                    "--- 繪本腳本開始 ---\n\n"
+                    "## 第 1 頁\n"
+                    "**🖼️ 畫面描述**: [請用繁體中文詳細描述畫面構圖、人物長相、動作、背景與光影。請在句尾加上「畫風：(帶入畫風設定)」以確保風格一致]\n"
+                    "**📖 故事內文**: [2-3 句繁體中文故事文字，充滿溫度與畫面感]\n"
                     "---\n"
+                    "（後續頁數以此類推，直到最後一頁）"
                 )
                 
                 response = client.models.generate_content(
@@ -237,10 +243,10 @@ else:
                         system_instruction=sys_instruct
                     )
                 )
-                status.update(label="✅ 繪本指令編排完成！", state="complete", expanded=False)
+                status.update(label="✅ 繪本腳本編排完成！", state="complete", expanded=False)
                 
                 st.balloons() 
-                st.success("📋 請點擊下方區塊右上角的圖示複製 Markdown 代碼，然後前往您的 Gemini Gem 貼上並送出！")
+                st.success("📋 請點擊右上角圖示複製下方的全中文腳本，直接前往您的 Gemini Gem 貼上並送出！")
                 
                 st.code(response.text, language="markdown")
 
